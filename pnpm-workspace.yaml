@@ -1,0 +1,34 @@
+# pnpm 的工作区设置。
+#
+# 为什么有这个文件：本仓库只有一个包（根包自己），不是多包工作区。
+# 但 pnpm 9 看到这个文件存在、发现没有 `packages` 字段，会直接报
+# `ERROR  packages field missing or empty` 失败（实测）。留这一行是为了
+# 还在用 pnpm 9 的人装得动；pnpm 10/11 不需要它。
+#
+# pnpm 11 读的「哪些依赖允许跑安装脚本」开关（`allowBuilds`）也住在这个文件里，
+# 不在 package.json。本仓库的依赖（`@deepseek-ai/schemastery`）没有安装脚本，
+# 所以这里没有 `allowBuilds` 条目 —— pnpm 10/11 遇到没有安装脚本的依赖不会报
+# ERR_PNPM_IGNORED_BUILDS，这个名单空着就是准确的状态。
+#
+# 将来真加进来一个带安装脚本的依赖，把它列进来（`false` 表示不放行），
+# 否则 pnpm 11 装的时候会以 1 退出。判据见 `test/packaging.test.js`。
+packages:
+  - '.'
+
+# 依赖按 npm 那样的扁平布局装（node_modules/<包>），不是 pnpm 默认的隔离布局。
+#
+# 为什么：宿主是用 `--preserve-symlinks` 导入插件的（profile 里装的是指向本源码
+# 目录的 link:，宿主要保住这个链接的路径）。Node 在这个模式下解析依赖时**不把
+# 符号链接还原成真实路径**，于是它从 `node_modules/@deepseek-ai/schemastery/`
+# 一路往上找 `node_modules`，而不是走进 pnpm 的 `.pnpm/` 目录。
+# 隔离布局下传递依赖只存在于 `.pnpm/<包>@<版本>/node_modules/` 里，扁平布局下
+# 它们就摆在 `node_modules/` 顶层 —— 后者宿主才找得到。
+# 装成扁平布局时本仓库的 node_modules 与宿主 profile 的那份（profile 的
+# pnpm-workspace.yaml 同样是 `nodeLinker: hoisted`）结构一致，两边行为相同。
+nodeLinker: hoisted
+
+# 宿主提供的 peer 依赖（@deepseek-ai/cordis、react）不在本仓库装。
+# 浏览器那一半的 react 来自宿主的模块表；服务端那一半根本不 import cordis
+# （本插件只用宿主注入的 ctx）。把 peer 装进来会装出第二份 react，与宿主那份
+# 不是同一个实例 —— 面板里的 context 就会对不上。
+autoInstallPeers: false

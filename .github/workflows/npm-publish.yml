@@ -1,0 +1,69 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        # 这里不写 version：pnpm 版本只有一个来源 —— package.json 的 `packageManager`
+        # 字段（理由见 .github/workflows/ci.yml 同一处注释）。
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 同 ci.yml：产物（client/index.js、locale/en.json、locale/zh-CN.json、
+      # docs/vendors.md）是进版本库的，「产物与源码同步」这条比对在这里有比对对象。
+      # 产物不进版本库的话，这条检查就没有比对对象，只能在打包那一步构建。
+      - name: Check generated artifacts are in sync
+        run: |
+          pnpm run build
+          git diff --exit-code
+
+      - name: Run tests
+        run: pnpm test
+
+  publish:
+    name: Publish to npm
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        # 这里不写 version：pnpm 版本只有一个来源 —— package.json 的 `packageManager`
+        # 字段（理由见 .github/workflows/ci.yml 同一处注释）。
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 这里不单独再构建一次：产物是进版本库的，test job 已经跑过 `pnpm run build`
+      # 并确认与源码一致，发布出去的就是 git 里那一份，不靠生命周期脚本隐式生成。
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

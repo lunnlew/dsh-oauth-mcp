@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # `pnpm test` 跑的是 `node --test "test/**/*.test.js"`，glob 形式的参数要 Node >= 22，
+        # 所以最低一档取 22；24 再跑一遍，两条线都绿才算过。
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        # 这里不写 version：pnpm 版本只有一个来源 —— package.json 的 `packageManager`
+        # 字段。action-setup@v4 在没有 version 输入时就去读它，读不到才报错。
+        # 写死版本号会让流水线上跑的 pnpm 跟本机不是一回事。
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 这份仓库的生成产物是进版本库的：client/index.js、locale/en.json、
+      # locale/zh-CN.json、docs/vendors.md 由 `pnpm run build` 生成，lib/ 才是手写源码。
+      # 所以「产物与源码同步」这条比对在这里是有比对对象的 —— 改了源码忘了重新生成，
+      # git 里留的是旧产物，发布出去的还是旧文件。
+      # 反过来，如果产物不进版本库（改成发布前现生成），这条检查就没有比对对象了：
+      # checkout 出来的工作树里根本没有产物可比，只能在打包那一步构建。
+      - name: Check generated artifacts are in sync
+        run: |
+          pnpm run build
+          git diff --exit-code
+
+      - name: Run tests
+        run: pnpm test

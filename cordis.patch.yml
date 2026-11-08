@@ -1,0 +1,20 @@
+# Loader patch for the dsh-oauth-mcp plugin bundle.
+#
+# The row id is the plugin's profile entry id: it is the namespace the host
+# `settings` service writes into (`settings.update('dsh-oauth-mcp', patch)`)
+# and the namespace the client settings form edits.
+- insert:
+    - id: dsh-oauth-mcp
+      name: 'dsh-oauth-mcp'
+      config:
+        callbackMode: dedicated-port
+        callbackPort: 39271
+        callbackPath: /oauth-mcp/callback
+        toolPrefix: mcp_oauth
+        authorizationTimeoutMs: 300000
+        defaultScopes: []
+        autoConnect: true
+        servers: []
+        locale: ''
+      inject:
+        - tools

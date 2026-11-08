@@ -1,0 +1,15 @@
+# 仓库里的文本文件一律用 LF 落盘。
+#
+# 为什么：Windows 上 checkout 出来默认是 CRLF，而本仓库有几处按「行号距离」
+# 做的断言（副本与来源逐行对齐、locale 表逐条对齐）。CRLF 会让那些断言在
+# Windows 与 Linux 上得到不同结果，而 CI 跑的是 Linux —— 那样本地绿、CI 红。
+# 明确写死 eol=lf，两边就拿到同一份字节。
+* text=auto eol=lf
+
+# 二进制文件不做换行转换。
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.tgz binary
