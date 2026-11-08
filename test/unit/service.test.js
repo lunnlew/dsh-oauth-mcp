@@ -10,9 +10,32 @@
  */
 
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test, { afterEach } from 'node:test'
 
 import { createOauthMcpService } from '../../lib/service.js'
+
+/**
+ * The services built by `createService`, released after every test.
+ *
+ * The timer of a pending authorization is ref'd on purpose (see
+ * `lib/http/timeout.js`), so a service that is left with a pending
+ * authorization keeps the event loop alive. Every test therefore gives its
+ * service back when it is done.
+ *
+ * @type {Array<{ dispose: () => void }>}
+ */
+const services = []
+
+/**
+ * Release every service that a test left behind.
+ *
+ * @returns {void}
+ */
+afterEach(() => {
+  while (services.length > 0) {
+    services.pop()?.dispose()
+  }
+})
 
 /**
  * Build a service with fake collaborators.
@@ -82,6 +105,7 @@ function createService(options = {}) {
     logger: { info() {}, warn() {}, error() {} },
   })
 
+  services.push(service)
   return { service, calls }
 }
 

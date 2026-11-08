@@ -825,5 +825,12 @@ export async function apply(ctx, config) {
     } catch (error) {
       logger?.warn?.('dsh-oauth-mcp: the tool registry did not dispose cleanly', { error: String(error?.message ?? error) })
     }
+    try {
+      // The pending authorizations hold a ref'd timer; they must be given up
+      // when the plugin goes away, or the timer keeps the process alive.
+      service.dispose()
+    } catch (error) {
+      logger?.warn?.('dsh-oauth-mcp: the pending authorizations did not release cleanly', { error: String(error?.message ?? error) })
+    }
   }
 }
