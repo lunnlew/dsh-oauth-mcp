@@ -61,6 +61,10 @@ export function createFakeHost(options = {}) {
 
   /** Every tool registration that is still alive. */
   const tools = new Map()
+  /** The admission condition of every tool, keyed by the tool name. */
+  const conditions = new Map()
+  /** Every dispatch guard the plugin registered. */
+  const guards = []
   /** Every command registration that is still alive. */
   const commands = new Map()
   /** Every authorization flow that is still alive. */
@@ -172,11 +176,58 @@ export function createFakeHost(options = {}) {
 
   const services = {
     tools: {
-      register: (definition) => {
+      register: (definition, options = {}) => {
         tools.set(definition.name, definition)
-        return () => tools.delete(definition.name)
+        if (typeof options.when === 'function') conditions.set(definition.name, options.when)
+        else conditions.delete(definition.name)
+        return () => {
+          tools.delete(definition.name)
+          conditions.delete(definition.name)
+        }
+      },
+      /**
+       * The guards the plugin registered.
+       *
+       * The host evaluates them before every dispatch and the first one that
+       * returns a reason refuses the call.
+       *
+       * @type {Array<(exec: object) => string | undefined>}
+       */
+      guard: (guard) => {
+        guards.push(guard)
+        return () => {
+          const index = guards.indexOf(guard)
+          if (index >= 0) guards.splice(index, 1)
+        }
       },
       definitions: () => [...tools.values()],
+      /**
+       * The tools a step would offer to one agent.
+       *
+       * @param {object} agent The agent of the step.
+       * @returns {object[]} The admitted tool definitions.
+       */
+      admitted: async (agent) => {
+        const admitted = []
+        for (const [name, definition] of tools) {
+          const when = conditions.get(name)
+          if (when === undefined || (await when({ agent }))) admitted.push(definition)
+        }
+        return admitted
+      },
+      /**
+       * The refusal the guards give for one call, if any.
+       *
+       * @param {object} exec The pending call.
+       * @returns {string | undefined} The refusal.
+       */
+      checkGuards: (exec) => {
+        for (const guard of guards) {
+          const reason = guard(exec)
+          if (reason !== undefined) return reason
+        }
+        return undefined
+      },
     },
     logger,
   }
@@ -234,6 +285,23 @@ export function createFakeHost(options = {}) {
     settingsService,
     services,
     emit,
+    /**
+     * The tools a step would offer to one agent.
+     *
+     * The host evaluates the admission condition of every registration before
+     * each model step; a tool whose condition is false is not in the table.
+     *
+     * @param {object} agent The agent of the step.
+     * @returns {Promise<object[]>} The admitted tool definitions.
+     */
+    admittedTools: (agent) => services.tools.admitted(agent),
+    /**
+     * The refusal the dispatch guards give for one call, if any.
+     *
+     * @param {object} exec The pending call.
+     * @returns {string | undefined} The refusal.
+     */
+    checkGuards: (exec) => services.tools.checkGuards(exec),
   }
 }
 

@@ -159,6 +159,32 @@ test('the panel writes only the volatile fields', async () => {
   assert.deepEqual(writes, [['defaultScopes', ['read', 'write']]])
 })
 
+test('the panel offers the lazy tools switch', async () => {
+  const React = createFakeReact()
+  const { form, writes } = createFakeConfigForm(CONFIG)
+  const Panel = createPanel(React, { getConfigForm: () => form })
+  const tree = React.render(Panel, {})
+  const nodes = collect(tree)
+
+  const rendered = texts(tree).join('\n')
+  assert.ok(rendered.includes('惰性工具'), 'the panel names the switch')
+
+  const toggles = nodes.filter(
+    (node) => node.type === 'input' && node.props.type === 'checkbox' && typeof node.props.onChange === 'function',
+  )
+  // The first switch is "connect on startup", the second one is the lazy tools.
+  const lazy = toggles[1]
+  assert.ok(lazy, 'the lazy tools switch is there')
+  assert.equal(lazy.props.checked, true, 'the lazy tools switch is on by default')
+  await lazy.props.onChange({ target: { checked: false } })
+
+  assert.deepEqual(
+    writes.filter(([field]) => field === 'lazyTools'),
+    [['lazyTools', false]],
+    'the switch writes the lazyTools field',
+  )
+})
+
 test('the panel only uses the host design tokens', () => {
   const React = createFakeReact()
   const { form } = createFakeConfigForm(CONFIG)

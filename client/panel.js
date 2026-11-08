@@ -86,6 +86,9 @@ export const PANEL_STRINGS = Object.freeze({
     'panel.global.toolPrefix': '工具名前缀',
     'panel.global.defaultScopes': '默认权限范围',
     'panel.global.autoConnect': '启动时自动连接',
+    'panel.global.lazyTools': '惰性工具',
+    'panel.global.lazyToolsHint':
+      '远端工具只有在 agent 调用 mcp_oauth 揭示之后才进工具表，这样每一步就不必背着它们的定义。关掉则一直挂着。',
     'panel.global.restartHint': '回调方式、回调端口、回调路径与工具名前缀在宿主的配置文件里改（设置 → 通用设置 → 打开配置文件），保存后宿主会重启本插件。',
     'panel.servers.vendor': '厂商',
     'panel.servers.vendor.custom': '自定义（手动填写地址）',
@@ -155,6 +158,9 @@ export const PANEL_STRINGS = Object.freeze({
     'panel.global.toolPrefix': 'Tool name prefix',
     'panel.global.defaultScopes': 'Default scopes',
     'panel.global.autoConnect': 'Connect on startup',
+    'panel.global.lazyTools': 'Lazy tools',
+    'panel.global.lazyToolsHint':
+      'The remote tools enter the tool table only after the agent reveals them with the mcp_oauth tool, so no step carries their definitions. Turn it off to keep them in the table all the time.',
     'panel.global.restartHint':
       'Callback mode, callback port, callback path and the tool name prefix are edited in the host configuration file (Settings → General → Open configuration file); the host restarts this plugin afterwards.',
     'panel.servers.vendor': 'Vendor',
@@ -1365,6 +1371,21 @@ export function createPanelComponent(React, options = {}) {
               onChange: (event) => void writeField('autoConnect', event.target.checked),
             }),
             h('span', { style: style.muted }, t('panel.global.autoConnect')),
+          ),
+          h(
+            'label',
+            { className: 'dsh-oauth-mcp-panel-check', style: style.check },
+            h('input', {
+              type: 'checkbox',
+              checked: config.lazyTools !== false,
+              onChange: (event) => void writeField('lazyTools', event.target.checked),
+            }),
+            h('span', { style: style.muted }, t('panel.global.lazyTools')),
+          ),
+          h(
+            'div',
+            { className: 'dsh-oauth-mcp-panel-hint', style: style.muted },
+            t('panel.global.lazyToolsHint'),
           ),
           h(
             'div',

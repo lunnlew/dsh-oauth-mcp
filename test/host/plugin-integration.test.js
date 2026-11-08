@@ -79,7 +79,13 @@ test('the Config accepts the documented shape', () => {
 test('the settings page fields are volatile, the rest is not', () => {
   // The host only lets the settings page write volatile fields; a volatile
   // field is committed into the running plugin instead of restarting it.
-  assert.deepEqual(volatileFields(Config), ['autoConnect', 'defaultScopes', 'locale', 'servers'])
+  assert.deepEqual(volatileFields(Config), [
+    'autoConnect',
+    'defaultScopes',
+    'lazyTools',
+    'locale',
+    'servers',
+  ])
 })
 
 test('the Config rejects a server without an id', () => {
@@ -204,7 +210,8 @@ test('the plugin picks the credential service up when the host exposes it later'
 test('unloading removes every registration', async () => {
   const host = createFakeHost({ config: makeConfig() })
   const dispose = await apply(host.ctx, host.config)
-  assert.equal(host.tools.size, 2)
+  // The authorize tool, the status tool and the lazy exposure entry tool.
+  assert.equal(host.tools.size, 3)
   assert.equal(host.commands.size, 1)
   assert.equal(host.flows.size, 1)
 
@@ -227,7 +234,8 @@ test('the plugin survives a host without the optional services', async () => {
   })
   const dispose = await apply(host.ctx, host.config)
   try {
-    assert.equal(host.tools.size, 2)
+    // The authorize tool, the status tool and the lazy exposure entry tool.
+    assert.equal(host.tools.size, 3)
     assert.equal(host.commands.size, 0)
     assert.equal(host.flows.size, 0)
   } finally {

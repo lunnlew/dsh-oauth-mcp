@@ -72,11 +72,12 @@ profile 里这个包是指向源码目录的链接。改完源码只要重启客
 | `defaultScopes` | `[]` | 服务器没有单独配置权限范围时使用的默认值 | 设置面板 |
 | `autoConnect` | `true` | 插件启动时自动连接已启用的服务器 | 设置面板 |
 | `servers` | `[]` | 服务器清单 | 设置面板 |
+| `lazyTools` | `true` | 惰性工具：远端工具只有在模型调用 `mcp_oauth` 揭示之后才进工具表 | 设置面板 |
 | `locale` | `''` | 插件内部字段，界面不显示。客户端把宿主当前的界面语言写进来，服务端据此选择命令输出和回调页的语言。留空表示跟随宿主 | 插件自己写入，不要手工改 |
 
 ### 2.4 哪些字段在哪里改
 
-宿主只允许客户端写入声明为 volatile 的字段，所以设置面板能热改的只有 `servers`、`defaultScopes`、`autoConnect`：写完立即生效，插件不重启。
+宿主只允许客户端写入声明为 volatile 的字段，所以设置面板能热改的只有 `servers`、`defaultScopes`、`autoConnect`、`lazyTools`：写完立即生效，插件不重启。
 
 `callbackMode`、`callbackPort`、`callbackPath`、`toolPrefix` 决定的是插件的运行形态，是普通字段。面板里这四项只读展示，改不了。宿主没有一个通用的插件配置表单能改它们：宿主设置服务只发布和接受 volatile 字段，插件面板那一页需要插件自己注册 `plugins.row.config` 才会出现，本插件没有注册。
 
@@ -296,7 +297,54 @@ mcp_oauth__linear__list_issues
 
 ---
 
-## 8. 令牌存储
+## 8. 惰性工具
+
+授权过的服务器可能带来几十个远端工具。全部挂在模型的工具表上，每一步都要背着它们的 schema —— 与本次任务无关的那部分也在里面。
+
+`lazyTools` 开着时（默认），远端工具**不在**模型的工具表里，只有一个入口工具 `mcp_oauth` 在。模型调用它，才把那台服务器的工具放进来。
+
+### 模型看到的过程
+
+1. 工具表里只有 `mcp_oauth`（以及插件自己的 `dsh_oauth_mcp_authorize`、`dsh_oauth_mcp_status`）。远端工具的名字模型都看不到。
+2. 模型调用 `mcp_oauth`：
+   - `{"server":"notion"}` —— 揭示这一台
+   - 不带参数 —— 列出所有服务器，并揭示其中已授权的
+3. 答案里是服务器列表和它公开的工具名，例如 `mcp_oauth__notion__search`。
+4. **下一步**起，这些工具进入模型的工具表，可以直接调用。揭示是当轮生效的：模型调用 `mcp_oauth` 拿到答案后，那一步的工具表就已经更新了。
+
+模型如果凭记忆硬调一个没揭示的工具，调用会被拦下，理由是：
+
+```
+The tools of the MCP server "notion" are not revealed in this session.
+Call the "mcp_oauth" tool with {"server":"notion"} first, then call the tool again.
+```
+
+### 作用域
+
+揭示状态按会话隔离，存在内存里的 `WeakMap`，键是宿主给的那个活着的 agent：
+
+- 同一个会话里揭示一次，之后一直有效
+- 换一个会话（新 agent）回到没揭示的状态
+- 插件卸载时一并丢掉，不落盘
+
+`/oauth-mcp status` 和 `dsh_oauth_mcp_status` 照常列出所有服务器和它们的工具 —— 那些工具是**注册**了的，只是没进这一轮模型的工具表。
+
+### 关掉
+
+把 `lazyTools` 设成 `false`：远端工具回到旧行为，一直挂在工具表上。入口工具仍然注册（它只是报告服务器列表），但不再有揭示和拦截。
+
+### 实测
+
+DSH 桌面版 0.2.2-rc.1，授权了 notion（77 个工具）和 context7（2 个工具）：
+
+| | 工具表里的工具数 | 远端工具数 |
+| --- | --- | --- |
+| `lazyTools` 关 | 132 | 79 |
+| `lazyTools` 开 | 54 | 0 |
+
+---
+
+## 9. 令牌存储
 
 - 令牌、`refresh_token`、`client_secret` 只写入 `ctx.credentials`，记录键为 `oauth-mcp/<serverId>`，格式是 `{ kind: 'grant', payload: … }`
 - 配置里没有任何密钥。`servers` 里只有 `clientId` 这类公开标识
@@ -318,7 +366,7 @@ node scripts/repair-credentials.mjs             # 真的改，原文件留一份
 
 ---
 
-## 9. 故障排查
+## 10. 故障排查
 
 ### 9.1 错误码
 
@@ -359,7 +407,7 @@ node scripts/repair-credentials.mjs             # 真的改，原文件留一份
 
 ---
 
-## 10. 安全说明
+## 11. 安全说明
 
 - 回环服务器只监听 `127.0.0.1`，并校验 `Host` 头；别的 `Host` 返回 400
 - `host-web` 模式额外校验 `Origin` 必须等于宿主自己的源，不匹配返回 403
@@ -370,7 +418,7 @@ node scripts/repair-credentials.mjs             # 真的改，原文件留一份
 
 ---
 
-## 11. 不支持什么
+## 12. 不支持什么
 
 - MCP 的 SSE 老传输（`http`）和 `stdio` 传输都不支持。前者只实现 `streamable-http`，后者是宿主自带 `dsh-mcp-client` 的范围
 - OIDC `id_token` 校验、DPoP 等非 Bearer 方案不实现

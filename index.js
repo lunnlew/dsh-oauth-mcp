@@ -34,9 +34,11 @@ import { createMcpSession } from './lib/mcp/session.js'
 import { createAuthFetch } from './lib/mcp/auth-fetch.js'
 import { createToolRegistry } from './lib/mcp/tool-registry.js'
 import { createToolExecutor } from './lib/mcp/tool-executor.js'
+import { createRevealState } from './lib/mcp/reveal.js'
 import { createOauthMcpService } from './lib/service.js'
 import { createAuthorizeTool } from './lib/tools/authorize.js'
 import { createStatusTool } from './lib/tools/status.js'
+import { createRevealTool } from './lib/tools/reveal.js'
 import { renderStatusTable, renderScopeDetails, renderToolTable } from './lib/view-model.js'
 import { redactText } from './lib/util/redact.js'
 import { readConfigArray, readConfigField } from './lib/util/config.js'
@@ -95,6 +97,7 @@ export const Config = z.object({
   autoConnect: z.boolean().default(true).volatile(),
   servers: z.array(ServerSchema).default([]).volatile(),
   locale: z.string().default('').volatile(),
+  lazyTools: z.boolean().default(true).volatile(),
 })
 
 /**
@@ -238,10 +241,18 @@ export async function apply(ctx, config) {
     disconnect: (serverId) => disconnectServer(serverId),
   }
 
+  // The lazy exposure state. While it is on, the remote tools are only offered
+  // to the model after the model asked for them through the entry tool.
+  const reveal = createRevealState({
+    enabled: config.lazyTools !== false,
+    toolPrefix: config.toolPrefix,
+  })
+
   const toolRegistry = createToolRegistry({
     tools: ctx.tools,
     toolPrefix: config.toolPrefix,
     logger,
+    admissionFor: (serverId) => reveal.admission(serverId),
     callTool: async (serverId, remoteToolName, args, options) => {
       const connection = connectionMap.get(serverId)
       if (!connection?.executor) {
@@ -434,6 +445,26 @@ export async function apply(ctx, config) {
     ctx.tools.register(createAuthorizeTool({ service, logger, callback: callbackState, config, settings })),
   )
   dispose(ctx.tools.register(createStatusTool({ service, logger, config, settings })))
+
+  // --- the lazy exposure -----------------------------------------------------
+  // While the lazy exposure is on, the remote tools are not in the model's
+  // tool table until the model asks for them through the `mcp_oauth` entry
+  // tool. The entry tool itself is always in the table: it is the only hint
+  // the model gets that the remote tools exist.
+  dispose(ctx.tools.register(createRevealTool({ reveal, service, locale: () => config.locale })))
+
+  // A model may remember a tool name from an earlier step and call it even
+  // though the tool is not in this step's table. The guard turns that call
+  // into an explanation instead of an opaque failure.
+  if (typeof ctx.tools.guard === 'function') {
+    try {
+      dispose(ctx.tools.guard((exec) => reveal.guardFor(exec)))
+    } catch (guardError) {
+      logger?.warn?.('dsh-oauth-mcp: the tool guard did not register', {
+        error: String(guardError?.message ?? guardError),
+      })
+    }
+  }
 
   // --- the host command ------------------------------------------------------
   if (commands?.register) {

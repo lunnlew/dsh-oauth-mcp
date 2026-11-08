@@ -147,9 +147,33 @@ dsh plugin list | grep oauth                  # 确认装上了
 
 默认前缀 `mcp_oauth` 与宿主自带的 `mcp__<server>__<tool>` 不冲突。
 
+### 惰性工具
+
+授权 3 家服务器可能有 70 多个远端工具。全部挂在模型的工具表上，每一步都要背着它们的定义 —— 与本次任务无关的那部分也在里面。
+
+默认开着惰性工具（`lazyTools`）：
+
+1. 工具表里只有一个入口工具 `mcp_oauth`，远端工具的名字模型都看不到。
+2. agent 调用 `mcp_oauth`（可以带 `{"server":"notion"}` 指定一台，不带就列全部）。
+3. 答案里是服务器列表和它公开的工具名。
+4. 下一步起这些工具进入工具表，可以直接调用。揭示是当轮生效的。
+
+agent 凭记忆硬调没揭示的工具会被拦下，理由里写明要先调用 `mcp_oauth`。
+
+揭示状态按会话隔离：同一个会话里揭示一次就一直有效，换个会话回到没揭示的状态，不落盘。
+
+实测（DSH 桌面版 0.2.2-rc.1，授权了 notion 与 context7）：
+
+| | 工具表里的工具数 | 远端工具数 |
+| --- | --- | --- |
+| `lazyTools` 关 | 132 | 79 |
+| `lazyTools` 开 | 54 | 0 |
+
+面板里可以随时关掉这个开关，关掉后远端工具一直挂在工具表上。
+
 ## 6. 改配置
 
-面板能改的字段只有 `servers`、`defaultScopes`、`autoConnect` 三个，写完立即生效，插件不重启。
+面板能改的字段只有 `servers`、`defaultScopes`、`autoConnect`、`lazyTools` 四个，写完立即生效，插件不重启。
 
 `callbackMode`、`callbackPort`、`callbackPath`、`toolPrefix` 在面板里只读展示，要改去宿主的配置文件（设置 → 通用设置 →「打开配置文件」，改 profile 里 `dsh-oauth-mcp` 条目的 `config:`），保存后宿主重启本插件。
 
@@ -163,6 +187,7 @@ dsh plugin list | grep oauth                  # 确认装上了
 | `defaultScopes` | `[]` | 服务器没有单独配置权限范围时使用的默认值 |
 | `autoConnect` | `true` | 插件启动时自动连接已启用的服务器 |
 | `servers` | `[]` | 服务器清单 |
+| `lazyTools` | `true` | 远端工具只在揭示之后进工具表 |
 
 改配置不影响令牌。令牌存在 `ctx.credentials` 里，不在插件配置里。但已建立的 MCP 会话会断开，并在下次连接时重建。
 
@@ -190,7 +215,7 @@ GitHub、Zendesk、Slack、PagerDuty、MongoDB Atlas、Render、Shopify、Atlass
    pnpm test               # 等价于 node --test "test/**/*.test.js"
    ```
 
-   仓库记录的最近一次全量运行是 **643 例**，全绿。用例分单元、协议契约、端到端、宿主集成、冒烟五类，外加发布清单与仓库卫生两条守卫。端到端有两种：`test/e2e/full-flow.test.js` 走协议层，`test/e2e/host-flow.test.js` 走完整链路。
+   仓库记录的最近一次全量运行是 **660 例**，全绿。用例分单元、协议契约、端到端、宿主集成、冒烟五类，外加发布清单与仓库卫生两条守卫。端到端有两种：`test/e2e/full-flow.test.js` 走协议层，`test/e2e/host-flow.test.js` 走完整链路。
 
    `node --test test/` 在 Node v24 上不可用：`--test` 的位置参数按 glob 解析，`test/` 会被当成模块去加载。
 

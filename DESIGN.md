@@ -883,6 +883,7 @@ interface OAuthMcpServerView {
 | **Windows / macOS / Linux** | 不使用 POSIX 专属能力；固定端口在 Windows 上更易被占（已排降级）；`node:http` 三平台一致；路径只用 `/`（URL 语义） |
 | **MCP 协议版本** | 支持 `2025-06-18`（首选）与 `2025-03-26`（回退）。协议头 `MCP-Protocol-Version` 必须随请求发送；服务端返回未知版本时按「服务端不支持我们的版本 → 降级到服务端声明的版本」处理，但只降到已知版本，否则报错 |
 | **MCP 传输** | 只实现 `streamable-http`。未来的 `http`（SSE 老传输）**不在**本插件范围（宿主 bundle 也没有该支） |
+| **远端工具的暴露** | **惰性**：默认（`lazyTools: true`）远端工具不进模型的工具表，只有入口工具 `mcp_oauth` 在；模型调用它才把那台服务器的工具放进来。宿主机制是 `tools.register(def, { when })` —— 条件每步求值一次，false 的工具不在那一步的表里（实测：`@deepseek-ai/dsh-tools 0.2.2-rc.1` 的 `resolve()`）。用 `tools.guard()` 兜住「模型凭记忆硬调」。见 `lib/mcp/reveal.js` |
 | **SDK 版本** | `@modelcontextprotocol/sdk` 依赖 `^1.32.2`；transport 行为变化需在 M3 做回归。SDK 升级走一次专项回归 |
 | **OAuth 规范漂移** | OAuth 2.1 仍是 draft → 只实现已稳定的部分（授权码 + PKCE + 刷新 + 轮换），不做 draft 特有扩展 |
 | **宿主 UI** | 不用 iframe、不 require `@deepseek-ai/dsh-client-ui-*`；只用 `--dsw-alias-*` token（`HOST-API-REFERENCE.md` §5 规则 6；`CONVENTIONS.md` §7） |

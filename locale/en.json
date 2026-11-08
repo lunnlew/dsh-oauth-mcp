@@ -45,6 +45,8 @@
   "panel.global.toolPrefix": "Tool name prefix",
   "panel.global.defaultScopes": "Default scopes",
   "panel.global.autoConnect": "Connect on startup",
+  "panel.global.lazyTools": "Lazy tools",
+  "panel.global.lazyToolsHint": "The remote tools enter the tool table only after the agent reveals them with the mcp_oauth tool, so no step carries their definitions. Turn it off to keep them in the table all the time.",
   "panel.global.restartHint": "Callback mode, callback port, callback path and the tool name prefix are edited in the host configuration file (Settings → General → Open configuration file); the host restarts this plugin afterwards.",
   "panel.servers.vendor": "Vendor",
   "panel.servers.vendor.custom": "Custom (type the address yourself)",
