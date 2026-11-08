@@ -879,7 +879,7 @@ interface OAuthMcpServerView {
 |---|---|
 | **宿主版本** | 目标：DSH 现行版本（实测 `@deepseek-ai/dsh-mcp-client 0.2.2-rc.1`）。本插件**不依赖**该 bundle，只用公开 Host Service（`tools` / `credentials` / `authorization` / `settings` / `webServer` / `slots`） |
 | **可选服务** | `credentials`、`authorization`、`settings` 均为**可选依赖**（`inject` + `ctx.get(...)` 判空），缺失时插件保持不活动而不是抛错（`HOST-API-REFERENCE.md` §5 规则 11）。`tools` 与 `slots` 是硬依赖 |
-| **Node 版本** | 需 **Node ≥ 22**（运行时 `fetch`、`AbortSignal.timeout`、`crypto.randomBytes`；测试用 `node --test` 的 glob 位置参数，那也是 Node 22 才有的写法） |
+| **Node 版本** | 需 **Node ≥ 22**（运行时 `fetch`、`crypto.randomBytes`；测试用 `node --test` 的 glob 位置参数，那也是 Node 22 才有的写法）。请求超时不用 `AbortSignal.timeout()`：它的计时器是 unref 的，不撑住事件循环，Node 22 上等待超时的请求会报 "Promise resolution is still pending but the event loop has already resolved" 而不是超时错误 —— 见 `lib/http/timeout.js` |
 | **Windows / macOS / Linux** | 不使用 POSIX 专属能力；固定端口在 Windows 上更易被占（已排降级）；`node:http` 三平台一致；路径只用 `/`（URL 语义） |
 | **MCP 协议版本** | 支持 `2025-06-18`（首选）与 `2025-03-26`（回退）。协议头 `MCP-Protocol-Version` 必须随请求发送；服务端返回未知版本时按「服务端不支持我们的版本 → 降级到服务端声明的版本」处理，但只降到已知版本，否则报错 |
 | **MCP 传输** | 只实现 `streamable-http`。未来的 `http`（SSE 老传输）**不在**本插件范围（宿主 bundle 也没有该支） |

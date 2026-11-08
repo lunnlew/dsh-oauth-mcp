@@ -79,9 +79,14 @@ export function createHttpClient(options = {}) → HttpClient
 | `request(url, { method = 'GET', headers?, body?, signal?, accept? } = {})` | `Promise<{ status, headers, body, text }>` — raw |
 
 Rules:
-* Combine the caller's `signal` with `AbortSignal.timeout(timeoutMs)`; a
-  timeout throws `HttpError` with `status === undefined` and message
-  `Request timed out after <n>ms`.
+* Combine the caller's `signal` with the timeout signal of
+  `lib/http/timeout.js`; a timeout throws `HttpError` with
+  `status === undefined` and message `Request timed out after <n>ms`.
+  The timeout is a timer of our own and not `AbortSignal.timeout()`: the
+  timer of `AbortSignal.timeout()` is unref'd, so it does not keep the event
+  loop alive, and on Node 22 a request that waits for the timeout then ends
+  as "Promise resolution is still pending but the event loop has already
+  resolved" instead of a timeout error.
 * A non-2xx status throws `HttpError` whose `detail` is the response text
   truncated to 200 characters, with `status` set. `detail` must be redacted.
 * A 2xx response whose body is not JSON throws `HttpError` with message

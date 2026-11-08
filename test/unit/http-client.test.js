@@ -162,8 +162,7 @@ test('a slow answer times out', async () => {
       assert.equal(error.status, undefined)
       return true
     },
-  )
-})
+  )})
 
 test('a transport failure raises an HttpError without a status', async () => {
   const fetchImpl = createFetch(() => {
