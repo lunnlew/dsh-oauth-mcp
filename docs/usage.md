@@ -14,7 +14,7 @@
 
 安装步骤在 [../README.md](../README.md#安装)。
 
-装载完成后宿主会返回 `application: restart-required`，需要重启 DSH 客户端。重启之后设置页出现「OAuth 授权管理」页签，会话里的 `/oauth-mcp` 开始响应，agent 的工具列表里出现两个 `dsh_oauth_mcp_*` 工具。
+装载的返回值有两种：`application: applied` 表示已经装上并生效；`application: restart-required` 表示改动要下次启动才生效，需要重启 DSH 客户端。重启之后设置页出现「OAuth 授权管理」页签，会话里的 `/oauth-mcp` 开始响应，agent 的工具列表里出现两个 `dsh_oauth_mcp_*` 工具。
 
 profile 里这个包是指向源码目录的链接。改完源码只要重启客户端，不必重新装载。
 
@@ -347,7 +347,7 @@ node scripts/repair-credentials.mjs             # 真的改，原文件留一份
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| 重启后设置页没有「OAuth 授权管理」 | 装载 bundle 一律返回 `restart-required` | 重启 DSH 客户端；还不行就重新装载一次 |
+| 重启后设置页没有「OAuth 授权管理」 | 装载返回 `restart-required`，改动要下次启动才生效 | 重启 DSH 客户端；还不行就重新装载一次 |
 | 授权回调打不开 | 回调模式不是本机回环（`host-web` / `manual-only`） | `manual-only` 下浏览器跳到 `http://127.0.0.1:39271/oauth-mcp/callback` 会失败，把地址栏整条 URL 用 `/oauth-mcp complete <serverId> <URL>` 粘回来；也可以让 agent 用 `dsh_oauth_mcp_authorize` 的 `callbackUrl` 参数收尾 |
 | 只知道地址、还没配置过 | 以前要先在面板加一遍 | 现在 `/oauth-mcp authorize <地址>` 一条命令就登记加授权 |
 | 授权成功但调用仍然 401 | 权限范围不够，或令牌过期且刷不动 | `/oauth-mcp status` 看是否标了「需要重新授权」；改 `scopes` 后重新 `/oauth-mcp authorize <serverId>` |
@@ -355,7 +355,7 @@ node scripts/repair-credentials.mjs             # 真的改，原文件留一份
 | 面板里服务器列表是空的 | 清单存在 profile 的 `cordis.patch.yml` 里，数据没丢；多半是客户端脚本没连上宿主的配置服务 | 硬刷新浏览器（`Ctrl+Shift+R`）；还不行就用 `/oauth-mcp status` 看插件实际读到的服务器 |
 | 远端工具名和别人的重了 | 宿主自带的 MCP 客户端占用 `mcp__<server>__<tool>` | 本插件默认用 `mcp_oauth__*`，不冲突；要改前缀就在同一个配置文件里改 `toolPrefix` |
 | 状态命令看不到令牌 | 故意的 | 令牌只在宿主凭据库里；状态只报是否已授权、过期时间、权限范围、工具数 |
-| 改了代码但行为没变 | 宿主没有热重载：Loader 用 `await import()` 加载插件，命中 ESM 缓存，必须重启 DSH；客户端脚本还要在浏览器里硬刷新 | 重启后跑一次 `/oauth-mcp status`，首行会打印 `插件版本 0.0.1 (build …)`，那个 build 标记就是正在跑的那一版 |
+| 改了代码但行为没变 | 宿主没有热重载：Loader 用 `await import()` 加载插件，命中 ESM 缓存，必须重启 DSH；客户端脚本还要在浏览器里硬刷新 | 重启后跑一次 `/oauth-mcp status`，首行会打印 `插件版本 <版本号> (build …)`，那个 build 标记就是正在跑的那一版 |
 
 ---
 

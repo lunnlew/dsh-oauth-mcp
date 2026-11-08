@@ -27,7 +27,7 @@ mock-mcp http://127.0.0.1:<随机端口>
 
 ```bash
 pnpm pack
-dsh plugin add ./dsh-oauth-mcp-0.0.1.tgz
+dsh plugin add ./dsh-oauth-mcp-<版本号>.tgz
 dsh plugin list | grep oauth
 ```
 
