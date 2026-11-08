@@ -215,7 +215,7 @@ GitHub、Zendesk、Slack、PagerDuty、MongoDB Atlas、Render、Shopify、Atlass
    pnpm test               # 等价于 node --test "test/**/*.test.js"
    ```
 
-   仓库记录的最近一次全量运行是 **660 例**，全绿。用例分单元、协议契约、端到端、宿主集成、冒烟五类，外加发布清单与仓库卫生两条守卫。端到端有两种：`test/e2e/full-flow.test.js` 走协议层，`test/e2e/host-flow.test.js` 走完整链路。
+   仓库记录的最近一次全量运行是 **667 例**，全绿。用例分单元、协议契约、端到端、宿主集成、冒烟五类，外加发布清单与仓库卫生两条守卫。端到端有两种：`test/e2e/full-flow.test.js` 走协议层，`test/e2e/host-flow.test.js` 走完整链路。
 
    `node --test test/` 在 Node v24 上不可用：`--test` 的位置参数按 glob 解析，`test/` 会被当成模块去加载。
 

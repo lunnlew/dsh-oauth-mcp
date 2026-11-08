@@ -116,10 +116,29 @@ test('the entry tool reveals a server and the host then admits its tools', async
       // The server is not authorized in this test, so the entry tool reports
       // that and reveals nothing. The authorized path is covered by the unit
       // tests of the reveal state.
-      const answer = await entry.execute({}, { agent })
-      assert.equal(Array.isArray(answer), true)
-      const text = answer.map((block) => block.text).join('\n')
-      assert.match(text, /mock/, 'the answer names the server')
+      const rows = await entry.execute({}, { agent })
+      assert.equal(Array.isArray(rows), true)
+      assert.equal(rows[0].serverId, 'mock')
+      assert.equal(typeof rows[0].revealed, 'boolean')
+      const rendered = entry.output.render({}, rows)
+      assert.match(rendered[0].text, /mock/, 'the answer names the server')
+
+      // The value the tool resolves with has to match the schema it declares:
+      // the host rejects an answer that does not, and the model never sees it.
+      const required = entry.output.schema.items.required
+      for (const row of rows) {
+        for (const field of required) {
+          assert.ok(
+            Object.hasOwn(row, field),
+            `the row is missing the field "${field}" that the schema requires`,
+          )
+        }
+      }
+      assert.equal(
+        rendered.every((block) => block.type === 'text' && typeof block.text === 'string'),
+        true,
+        'the render produces text blocks',
+      )
 
       // The tools of the server are still not offered: it is not authorized.
       const admitted = await host.admittedTools(agent)
