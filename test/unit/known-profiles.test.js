@@ -168,6 +168,7 @@ test('the table covers the vendors that were probed', () => {
     'context7',
     'pagerduty',
     'zendesk',
+    'todoist',
   ]) {
     assert.ok(findProfile(id), `missing profile: ${id}`)
   }

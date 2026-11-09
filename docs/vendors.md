@@ -1,7 +1,7 @@
 # 厂商适配说明 · dsh-oauth-mcp
 
 插件本身**不绑定任何厂商**：它实现的是通用的 OAuth 2.1 + MCP。
-本文件记录的是**官方公开远程 MCP 服务器的 OAuth 元数据实测结果**（2026-11-07 在本机逐个探测），
+本文件记录的是**官方公开远程 MCP 服务器的 OAuth 元数据实测结果**（2026-11-07 与 2026-11-09 在本机逐个探测），
 用来回答两件事：哪些服务**必须配 OAuth 才能用**，以及每一家该怎么配。
 
 ---
@@ -26,7 +26,7 @@
 > `https://accounts.feishu.cn/.well-known/oauth-authorization-server/mcp`。
 > 插件四种形态都会试（见 `lib/oauth/discovery.js`）。
 
-实测结论：**下面 40 家**的远程 MCP 服务器全部需要 OAuth 令牌才能用；其中 **33 家支持动态客户端注册（DCR）**，
+实测结论：**下面 41 家**的远程 MCP 服务器全部需要 OAuth 令牌才能用；其中 **34 家支持动态客户端注册（DCR）**，
 插件可以自助注册、用户只需在浏览器点一次同意。剩下 7 家要自己建客户端，见第 3 节。
 
 国内的服务里，**腾讯云 CloudBase**（含国际站）与**飞书**（国际版 Lark）走的是标准 OAuth 2.1，可以直接用。
@@ -35,7 +35,7 @@
 
 ---
 
-## 2. 总表（2026-11-07 实测）
+## 2. 总表（2026-11-07 与 2026-11-09 实测）
 
 <!-- >>> VENDOR_TABLE -->
 | # | 服务 | MCP 端点 | 授权服务器（issuer） | 动态注册 | 默认 scope | PKCE | 备注 |
@@ -76,10 +76,11 @@
 | 34 | Tavily MCP | `https://mcp.tavily.com/mcp` | `https://mcp.tavily.com/` | ✅ `https://mcp.tavily.com/register` | openid offline_access | S256 | AS 与资源同域，注册端点在 `/register`；scope 是 OIDC 一对 |
 | 35 | Shopify MCP | `https://mcp.shopify.com/mcp` | `https://setup.shopify.com/auth` | ❌ 无 | read_all_orders read_analytics read_apps read_companies read_legal_policies read_reports read_rollouts | S256 | AS 在 `setup.shopify.com/auth`（另一域），**无 DCR** → 需填 client_id；scope 按业务域读写成对 |
 | 36 | Airtable MCP | `https://mcp.airtable.com/mcp` | `https://airtable.com/oauth2/v1` | ✅ `https://airtable.com/oauth2/v1/register` | data.records:read schema.bases:read workspacesAndBases:read | S256 | AS 在 `airtable.com/oauth2/v1`；scope 按记录/表/评论读写成对 |
-| 37 | 腾讯云 CloudBase MCP | `https://tcb-api.cloud.tencent.com/mcp/v1` | `https://tcb-api.cloud.tencent.com` | ✅ `https://tcb-api.cloud.tencent.com/mcp/oauth2/register` | mcp:full | S256 | **国内**：AS 与资源同域，注册端点在 `/mcp/oauth2/register`；scope 是 `mcp:full` |
-| 38 | Tencent CloudBase MCP (international) | `https://tcb-api.tencentcloud.com/mcp/v1` | `https://tcb-api.tencentcloud.com` | ✅ `https://tcb-api.tencentcloud.com/mcp/oauth2/register` | mcp:full | S256 | 与国内站同一套服务，但账号体系与元数据相互独立，换站要换域名 |
-| 39 | 飞书 MCP | `https://mcp.feishu.cn/mcp` | `https://accounts.feishu.cn/mcp` | ✅ `https://open.feishu.cn/open-apis/app/v1/dcr` | mcp-tool:common:get-user mcp-tool:common:search-user mcp-tool:common:fetch-file-v2 mcp-tool:docs:search-doc mcp-tool:docs:fetch-doc mcp-tool:docs:get-comments mcp-tool:im:search-groups mcp-tool:im:get-group-members mcp-tool:im:get-messages mcp-tool:im:get-thread-messages mcp-tool:im:search-messages mcp-tool:im:get-read-status offline_access | S256 | **国内**：AS 在 `accounts.feishu.cn/mcp`，注册端点是飞书开放平台 `/open-apis/app/v1/dcr`；scope 按工具族；**只接受回调路径 `/callback`**；注册拿到的是**官方应用**的 client id，用不用得了由**企业管理员**决定 |
-| 40 | Lark MCP | `https://mcp.larksuite.com/mcp` | `https://accounts.larksuite.com/mcp` | ✅ `https://open.larksuite.com/open-apis/app/v1/dcr` | mcp-tool:common:get-user mcp-tool:common:search-user mcp-tool:common:fetch-file-v2 mcp-tool:docs:search-doc mcp-tool:docs:fetch-doc mcp-tool:docs:get-comments mcp-tool:im:search-groups mcp-tool:im:get-group-members mcp-tool:im:get-messages mcp-tool:im:get-thread-messages mcp-tool:im:search-messages mcp-tool:im:get-read-status offline_access | S256 | 飞书的国际版服务；同样**只接受回调路径 `/callback`**，注册拿到的也是官方应用的 client id |
+| 37 | Todoist MCP | `https://ai.todoist.net/mcp` | `https://todoist.com` | ✅ `https://todoist.com/oauth/register` | data:read_write | S256 | 资源在 `ai.todoist.net`、AS 在 `todoist.com`，两个域；只有 `data:read_write` 一个 scope |
+| 38 | 腾讯云 CloudBase MCP | `https://tcb-api.cloud.tencent.com/mcp/v1` | `https://tcb-api.cloud.tencent.com` | ✅ `https://tcb-api.cloud.tencent.com/mcp/oauth2/register` | mcp:full | S256 | **国内**：AS 与资源同域，注册端点在 `/mcp/oauth2/register`；scope 是 `mcp:full` |
+| 39 | Tencent CloudBase MCP (international) | `https://tcb-api.tencentcloud.com/mcp/v1` | `https://tcb-api.tencentcloud.com` | ✅ `https://tcb-api.tencentcloud.com/mcp/oauth2/register` | mcp:full | S256 | 与国内站同一套服务，但账号体系与元数据相互独立，换站要换域名 |
+| 40 | 飞书 MCP | `https://mcp.feishu.cn/mcp` | `https://accounts.feishu.cn/mcp` | ✅ `https://open.feishu.cn/open-apis/app/v1/dcr` | mcp-tool:common:get-user mcp-tool:common:search-user mcp-tool:common:fetch-file-v2 mcp-tool:docs:search-doc mcp-tool:docs:fetch-doc mcp-tool:docs:get-comments mcp-tool:im:search-groups mcp-tool:im:get-group-members mcp-tool:im:get-messages mcp-tool:im:get-thread-messages mcp-tool:im:search-messages mcp-tool:im:get-read-status offline_access | S256 | **国内**：AS 在 `accounts.feishu.cn/mcp`，注册端点是飞书开放平台 `/open-apis/app/v1/dcr`；scope 按工具族；**只接受回调路径 `/callback`**；注册拿到的是**官方应用**的 client id，用不用得了由**企业管理员**决定 |
+| 41 | Lark MCP | `https://mcp.larksuite.com/mcp` | `https://accounts.larksuite.com/mcp` | ✅ `https://open.larksuite.com/open-apis/app/v1/dcr` | mcp-tool:common:get-user mcp-tool:common:search-user mcp-tool:common:fetch-file-v2 mcp-tool:docs:search-doc mcp-tool:docs:fetch-doc mcp-tool:docs:get-comments mcp-tool:im:search-groups mcp-tool:im:get-group-members mcp-tool:im:get-messages mcp-tool:im:get-thread-messages mcp-tool:im:search-messages mcp-tool:im:get-read-status offline_access | S256 | 飞书的国际版服务；同样**只接受回调路径 `/callback`**，注册拿到的也是官方应用的 client id |
 <!-- <<< VENDOR_TABLE -->
 
 > 插件内置的适配表 `lib/profiles/known-profiles.js` 就是这张表的机器可读版本
@@ -211,7 +212,7 @@ curl https://<issuer>/.well-known/oauth-authorization-server
 第 2 步返回 `WWW-Authenticate` 时，从它的 `resource_metadata=` 里拿到元数据地址，直接访问即可。
 第 3 步里没有 `registration_endpoint` 时，就必须走第 3 节说的「手工建客户端」。
 
-这三条命令已经写成脚本，`pnpm run probe:vendors` 会把内置表里的 40 家逐个重新探测一遍，
+这三条命令已经写成脚本，`pnpm run probe:vendors` 会把内置表里的 41 家逐个重新探测一遍，
 并报告表与厂商当前的元数据哪里对不上。厂商改了端点或撤了注册端点，跑一次就知道。
 给它一个 JSON 文件（端点数组）则改为探测新候选：
 

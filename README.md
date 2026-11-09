@@ -79,7 +79,7 @@ dsh plugin list | grep oauth                  # 确认装上了
 
 1. 打开 设置 →「OAuth 授权管理」，点「添加服务器」。
 
-2. 在厂商下拉里选一家。内置 40 家实测过的远程 MCP 服务器，选中之后服务器地址、ID、名称、默认权限范围、授权服务器地址自动填好。
+2. 在厂商下拉里选一家。内置 41 家实测过的远程 MCP 服务器，选中之后服务器地址、ID、名称、默认权限范围、授权服务器地址自动填好。
 
 3. 勾选权限范围，保存。
 
@@ -248,7 +248,7 @@ npm 发布那一步需要 GitHub 仓库里配一个 `NPM_TOKEN` secret。
 | 文档 | 内容 |
 | --- | --- |
 | [docs/usage.md](docs/usage.md) | 字段表、命令与工具参考、回调模式、令牌存储、错误码、故障排查 |
-| [docs/vendors.md](docs/vendors.md) | 40 家远程 MCP 服务器的 OAuth 元数据实测表 |
+| [docs/vendors.md](docs/vendors.md) | 41 家远程 MCP 服务器的 OAuth 元数据实测表 |
 | [docs/verification.md](docs/verification.md) | 12 步手工验收清单 |
 | [docs/contract.md](docs/contract.md) | 模块级接口契约 |
 | [docs/review-2026-11-07.md](docs/review-2026-11-07.md) | 六个方面的评审记录：已改的问题与剩下的清单 |

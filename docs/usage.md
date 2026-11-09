@@ -26,7 +26,7 @@ profile 里这个包是指向源码目录的链接。改完源码只要重启客
 
 打开 设置 → OAuth 授权管理，点「添加服务器」。
 
-弹框里第一项是厂商下拉。内置 40 家实测过的远程 MCP 服务器，含 Notion、Linear、Atlassian、Sentry、Figma、GitHub、Stripe、Slack、Shopify、Supabase、飞书、腾讯云 CloudBase 等，完整清单与参数见 [vendors.md](./vendors.md)。选中一家之后，服务器地址、ID、名称、默认权限范围、授权服务器地址自动填好；厂商公布的权限范围以复选框列出，勾选即生效。
+弹框里第一项是厂商下拉。内置 41 家实测过的远程 MCP 服务器，含 Notion、Linear、Atlassian、Sentry、Figma、GitHub、Stripe、Slack、Shopify、Supabase、飞书、腾讯云 CloudBase 等，完整清单与参数见 [vendors.md](./vendors.md)。选中一家之后，服务器地址、ID、名称、默认权限范围、授权服务器地址自动填好；厂商公布的权限范围以复选框列出，勾选即生效。
 
 选「自定义」就全部手填。ID 留空会按地址自动生成。
 
@@ -116,7 +116,7 @@ profile 里这个包是指向源码目录的链接。改完源码只要重启客
 
 ### 2.7 需要额外配置的厂商
 
-`docs/vendors.md` 里有 40 家远程 MCP 服务器的 2026-11-07 实测元数据（端点、授权服务器、动态注册、权限范围、PKCE）。不能完全自动的有 8 家：
+`docs/vendors.md` 里有 41 家远程 MCP 服务器的 2026-11-07 与 2026-11-09 实测元数据（端点、授权服务器、动态注册、权限范围、PKCE）。不能完全自动的有 8 家：
 
 - GitHub：不发布 RFC 8414 元数据，也没有动态注册。要在 GitHub 后台建一个 OAuth App，把 client id 填进 `clientId`，密钥填进 `clientSecret`。GitHub 还不发布令牌端点，插件猜不出来，所以这一家的自动流程仍然走不通
 - Zendesk：发布元数据但没有注册端点。要在 Zendesk 后台建客户端，填 `clientId`

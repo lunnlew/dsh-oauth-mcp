@@ -1510,6 +1510,15 @@ function createCommandView(React, options = {}) {
         needsClientId: false,
       },
       {
+        id: 'todoist',
+        label: 'Todoist MCP',
+        endpoint: 'https://ai.todoist.net/mcp',
+        authorizationServerUrl: 'https://todoist.com',
+        scopes: Object.freeze(['data:read_write']),
+        defaultScopes: Object.freeze(['data:read_write']),
+        needsClientId: false,
+      },
+      {
         id: 'cloudbase',
         label: '腾讯云 CloudBase MCP',
         endpoint: 'https://tcb-api.cloud.tencent.com/mcp/v1',
