@@ -1,6 +1,6 @@
 {
   "name": "dsh-oauth-mcp",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "OAuth 2.1 client and MCP bridge for DSH: discover and authorize remote MCP servers, keep tokens fresh, and expose their tools",
   "keywords": [
     "dsh",
